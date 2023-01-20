@@ -1,0 +1,46 @@
+version: "3"
+
+services:
+  api:
+    build:
+        dockerfile: Api.Dockerfile
+        context: .
+    volumes:
+      - ./api:/code
+    networks:
+      - traefik_webgateway
+    restart: on-failure
+    labels:
+      # Standard configuration
+      - "traefik.enable=true"
+      - "traefik.http.routers.fastapi.rule=Host(`MYAPPDOMAIN`)"
+      - "traefik.http.services.fastapi.loadbalancer.server.port=8000"
+      - "traefik.docker.network=traefik_webgateway"
+      # HTTPS configuration
+      - "traefik.http.routers.fastapi.tls=true"
+      - "traefik.http.routers.fastapi.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.fastapi.entrypoints=websecure"
+
+  frontend:
+    build:
+      dockerfile: Frontend.Dockerfile
+      context: .
+    networks:
+      - traefik_webgateway
+    depends_on:
+      - api
+    restart: on-failure
+    labels:
+      # Standard configuration
+      - "traefik.enable=true"
+      - "traefik.http.routers.webappfrontend.rule=Host(`${APP_HOST}`)"
+      - "traefik.http.services.webappfrontend.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik_webgateway"
+      # HTTPS configuration
+      - "traefik.http.routers.webappfrontend.tls=true"
+      - "traefik.http.routers.webappfrontend.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.webappfrontend.entrypoints=websecure"
+
+networks:
+  traefik_webgateway:
+    external: true
