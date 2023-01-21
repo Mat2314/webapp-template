@@ -5,8 +5,6 @@ services:
     build:
         dockerfile: Api.Dockerfile
         context: .
-    volumes:
-      - ./api:/code
     networks:
       - traefik_webgateway
     restart: on-failure
